@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Le Scribe Audio — Outils Word (SRT/VTT, Typographie FR &amp; PV)</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #1e40af;
+      --primary-hover: #1e3a8a;
+      --success-bg: #ecfdf5;
+      --success-text: #065f46;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --success-bg: #064e3b;
+        --success-text: #d1fae5;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 4px 0;
+      font-weight: 700;
+    }
+    h2 {
+      font-size: 13px;
+      margin: 0 0 6px 0;
+      font-weight: 700;
+    }
+    p { margin: 0 0 8px 0; color: var(--muted); font-size: 12px; }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11.5px;
+      background: var(--bg);
+      color: var(--text);
+      resize: vertical;
+    }
+    label.chk {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      margin: 6px 0;
+      cursor: pointer;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-block-size: 34px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 12.5px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { background: rgba(100, 116, 139, 0.12); }
+    .status {
+      margin-top: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: var(--success-bg);
+      color: var(--success-text);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .status.visible { opacity: 1; }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .stat-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+    .stat-box strong { display: block; font-size: 13px; color: var(--text); }
+    footer {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      padding-top: 4px;
+    }
+    footer a { color: var(--primary); text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Le Scribe Audio — Outils Word</h1>
+    <p>Traitement 100 % local dans Microsoft Word (aucune donnée transmise à un serveur externe).</p>
+  </div>
+
+  <section class="card" aria-labelledby="sec-srt">
+    <h2 id="sec-srt">1. Nettoyer &amp; insérer un .SRT / .VTT (Teams, Zoom, Whisper)</h2>
+    <p>Fusionne les répliques consécutives par intervenant et applique les espaces insécables françaises.</p>
+    <textarea id="srt-input" aria-label="Contenu SRT ou VTT à nettoyer" placeholder="WEBVTT&#10;&#10;00:00:02.100 --> 00:00:06.400&#10;<v M. Martin>Bonjour à tous : ouvrons la séance !</v>"></textarea>
+    <label class="chk">
+      <input type="checkbox" id="keep-tc" checked />
+      <span>Conserver l'horodatage initial <code>[hh:mm:ss]</code></span>
+    </label>
+    <label class="chk">
+      <input type="checkbox" id="iramuteq-mode" />
+      <span>Format corpus étoilé <code>IRaMuTeQ</code> (<code>**** *entretien</code>)</span>
+    </label>
+    <button type="button" class="btn" id="btn-insert-word">Insérer proprement dans Word</button>
+    <button type="button" class="btn btn-secondary" id="btn-copy-clean">Copier le texte nettoyé</button>
+    <div id="status-srt" role="status" class="status"></div>
+  </section>
+
+  <section class="card" aria-labelledby="sec-typo">
+    <h2 id="sec-typo">2. Typographie française &amp; diagnostic du document actif</h2>
+    <p>Corrige les espaces insécables fines avant <code>: ; ? ! % €</code> et autour des guillemets <code>« … »</code> sur la sélection ou le document entier, et estime le temps réaliste de relecture (2 à 3 h par heure d'audio).</p>
+    <button type="button" class="btn" id="btn-fix-typo">Appliquer la typographie française au document</button>
+    <div class="stats" id="doc-stats">
+      <div class="stat-box"><span id="stat-words-lbl">Mots estimés</span><strong id="stat-words">—</strong></div>
+      <div class="stat-box"><span>Durée orale (~150 m/min)</span><strong id="stat-audio">—</strong></div>
+    </div>
+    <div id="status-typo" role="status" class="status"></div>
+  </section>
+
+  <footer>
+    Édité par <a href="https://lescribeaudio.com?utm_source=word_addin" target="_blank" rel="noopener">Le Scribe Audio</a> ·
+    <a href="https://lescribeaudio.com/outils?utm_source=word_addin" target="_blank" rel="noopener">Documentation</a> ·
+    <a href="https://lescribeaudio.com/confidentialite" target="_blank" rel="noopener">Confidentialité</a>
+  </footer>
+
+  <script>
+    (function () {
+      const NNBSP = "\u202F";
+      const NBSP = "\u00A0";
+      let officeReady = false;
+      let lastMsg = "";
+
+      if (window.Office && typeof window.Office.onReady === "function") {
+        window.Office.onReady(function () {
+          officeReady = true;
+        });
+      }
+
+      function applyFrenchTypography(text) {
+        return String(text || "")
+          .replace(/\s*([:;?!%])\b/g, NNBSP + "$1")
+          .replace(/\s*([:;?!])(?=\s|$)/g, NNBSP + "$1")
+          .replace(/«\s*/g, "«" + NBSP)
+          .replace(/\s*»/g, NBSP + "»")
+          .replace(/(\d)\s+€/g, "$1" + NBSP + "€");
+      }
+
+      function cleanSrtVtt(raw, keepTc, iramuteq) {
+        const lines = String(raw || "").replace(/\r\n/g, "\n").split("\n");
+        const turns = [];
+        let currentTc = "00:00:00";
+        const tcRe = /(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})[.,]\d{1,3}\s*-->/;
+        const vRe = /^<v\s+([^>]+)>(.*?)(?:<\/v>)?$/i;
+        const colRe = /^([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ0-9\s.'()-]{1,42})\s*:\s+(.+)$/;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line || /^(?:WEBVTT|NOTE\b|Kind:|Language:)/i.test(line)) continue;
+          if (/^\d+$/.test(line) || /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(line)) continue;
+          const tm = line.match(tcRe);
+          if (tm) {
+            currentTc = tm[1].length === 5 ? "00:" + tm[1] : tm[1];
+            continue;
+          }
+          let speaker = "Intervenant";
+          let body = line;
+          const vm = line.match(vRe);
+          const cm = !vm ? line.match(colRe) : null;
+          if (vm) {
+            speaker = vm[1].trim();
+            body = vm[2].trim();
+          } else if (cm) {
+            speaker = cm[1].trim();
+            body = cm[2].trim();
+          }
+          body = body.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+          if (!body) continue;
+          const prev = turns[turns.length - 1];
+          if (prev && prev.speaker.toLowerCase() === speaker.toLowerCase()) {
+            prev.text = (prev.text + " " + body).replace(/\s+/g, " ").trim();
+          } else {
+            turns.push({ speaker: speaker, tc: currentTc, text: body });
+          }
+        }
+
+        if (iramuteq) {
+          const out = ["**** *entretien_word"];
+          for (let j = 0; j < turns.length; j++) {
+            const slug = turns[j].speaker
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "_")
+              .replace(/^_+|_+$/g, "") || "locuteur";
+            out.push("-*loc_" + slug);
+            out.push(applyFrenchTypography(turns[j].text.replace(/\*/g, " ")));
+          }
+          return out.join("\n");
+        }
+
+        return turns
+          .map(function (t) {
+            const prefix = keepTc ? "[" + t.tc + "] " : "";
+            return prefix + t.speaker + NBSP + ": " + applyFrenchTypography(t.text);
+          })
+          .join("\n\n");
+      }
+
+      function showStatus(id, msg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let finalMsg = msg;
+        if (finalMsg === lastMsg) finalMsg += NBSP;
+        lastMsg = finalMsg;
+        el.textContent = finalMsg;
+        el.classList.add("visible");
+        setTimeout(function () {
+          el.classList.remove("visible");
+          el.textContent = "";
+        }, 2600);
+      }
+
+      document.getElementById("btn-insert-word").addEventListener("click", async function () {
+        const raw = document.getElementById("srt-input").value;
+        const keepTc = document.getElementById("keep-tc").checked;
+        const ira = document.getElementById("iramuteq-mode").checked;
+        const cleaned = cleanSrtVtt(raw, keepTc, ira);
+        if (!cleaned) {
+          showStatus("status-srt", "Collez d'abord un contenu .SRT ou .VTT.");
+          return;
+        }
+        if (officeReady && window.Word && typeof window.Word.run === "function") {
+          try {
+            await window.Word.run(async function (context) {
+              const selection = context.document.getSelection();
+              selection.insertText(cleaned + "\n", window.Word.InsertLocation.replace);
+              await context.sync();
+            });
+            showStatus("status-srt", "Transcription insérée dans Word.");
+            return;
+          } catch (e) {
+            showStatus("status-srt", "Erreur Word : utilisez Copier.");
+            return;
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(cleaned);
+          showStatus("status-srt", "Mode navigateur : texte copié.");
+        } catch (e) {
+          showStatus("status-srt", "Impossible de copier automatiquement.");
+        }
+      });
+
+      document.getElementById("btn-copy-clean").addEventListener("click", async function () {
+        const raw = document.getElementById("srt-input").value;
+        const keepTc = document.getElementById("keep-tc").checked;
+        const ira = document.getElementById("iramuteq-mode").checked;
+        const cleaned = cleanSrtVtt(raw, keepTc, ira);
+        if (!cleaned) {
+          showStatus("status-srt", "Aucun texte à copier.");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(cleaned);
+          showStatus("status-srt", "Texte nettoyé copié.");
+        } catch (e) {
+          showStatus("status-srt", "Échec de la copie.");
+        }
+      });
+
+      document.getElementById("btn-fix-typo").addEventListener("click", async function () {
+        if (officeReady && window.Word && typeof window.Word.run === "function") {
+          try {
+            await window.Word.run(async function (context) {
+              const body = context.document.body;
+              body.load("text");
+              await context.sync();
+              const text = body.text || "";
+              const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+              const mins = Math.max(1, Math.round(words / 150));
+              document.getElementById("stat-words").textContent = words.toLocaleString("fr-FR");
+              document.getElementById("stat-audio").textContent = "~" + mins + " min";
+
+              const paragraphs = body.paragraphs;
+              paragraphs.load("items/text");
+              await context.sync();
+              for (let i = 0; i < paragraphs.items.length; i++) {
+                const p = paragraphs.items[i];
+                const fixed = applyFrenchTypography(p.text);
+                if (fixed !== p.text && p.text.trim().length > 0) {
+                  p.insertText(fixed, window.Word.InsertLocation.replace);
+                }
+              }
+              await context.sync();
+            });
+            showStatus("status-typo", "Espaces insécables appliquées au document.");
+            return;
+          } catch (e) {
+            showStatus("status-typo", "Impossible de modifier ce document protégé.");
+            return;
+          }
+        }
+        const sampleText = document.getElementById("srt-input").value || "";
+        const words = sampleText.trim() ? sampleText.trim().split(/\s+/).length : 0;
+        document.getElementById("stat-words").textContent = words.toLocaleString("fr-FR");
+        document.getElementById("stat-audio").textContent = "~" + Math.max(1, Math.round(words / 150)) + " min";
+        showStatus("status-typo", "Ouvrez ce volet dans Microsoft Word pour agir sur le document.");
+      });
+    })();
+  </script>
+</body>
+</html>
